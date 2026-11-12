@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#F5F6F9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Mini LED 与 RGB LED 背光对比</title>
+<meta name="description" content="Mini LED 白光/蓝光背光 与 RGB LED 三色背光 的灯珠结构、色彩表现对比演示">
+<meta property="og:title" content="Mini LED 与 RGB LED 背光对比">
+<meta property="og:description" content="一颗灯珠只能发一种颜色，还是三颗芯片独立发光？三种模式对比。">
+<style>
+*,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+[hidden]{display:none!important;}
+
+:root{
+  --bg:#F5F6F9;
+  --panel-a:#EBEFF7;
+  --panel-b:#D8DEEE;
+  --line:#DFE4EC;
+  --ink:#1A2030;
+  --ink2:#68707F;
+  --ink3:#9AA1AE;
+  --brand:#123F78;
+  --brand-d:#0D3159;
+  --b:40px;
+  --lens:96px;
+}
+
+html,body{height:100%;margin:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  overscroll-behavior:none;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* ---------- 外壳 ---------- */
+.app{
+  height:100vh;height:100dvh;
+  display:flex;flex-direction:column;
+  gap:0;
+  padding-top:max(9px,env(safe-area-inset-top));
+  padding-bottom:max(9px,env(safe-area-inset-bottom));
+  padding-left:max(16px,env(safe-area-inset-left));
+  padding-right:max(16px,env(safe-area-inset-right));
+}
+
+.body{flex:1 1 auto;min-height:0;display:flex;gap:13px;}
+
+/* ---------- 舞台 ---------- */
+.stage{
+  position:relative;flex:1 1 auto;min-width:0;
+  display:flex;
+  padding:12px 10px 46px;
+  border-radius:20px;
+  background:linear-gradient(158deg,var(--panel-a) 0%,var(--panel-b) 100%);
+  border:1px solid #E4E8EF;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -18px 34px -22px rgba(24,40,78,.16),
+    0 10px 26px -18px rgba(24,40,78,.35);
+  overflow:hidden;
+}
+.stage::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 0%,rgba(255,255,255,.5),transparent 58%);
+}
+
+.side{
+  position:relative;
+  flex:1 1 0;min-width:0;
+  display:flex;align-items:center;justify-content:center;
+  z-index:1;
+}
+.side + .side{position:relative;}
+.side + .side::before{
+  content:'';position:absolute;left:-1px;top:9%;bottom:9%;
+  border-left:1px dashed #CAD1DF;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(3,var(--b));
+  gap:calc(var(--b) * .78);
+}
+
+.bead{
+  position:relative;
+  width:var(--b);height:var(--b);
+  border-radius:50%;
+  background:#D3D8E1;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.62),
+    0 2px 5px rgba(24,40,78,.16);
+  transition:background .55s cubic-bezier(.4,0,.2,1),box-shadow .4s;
+}
+.bead::before{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle at 36% 30%,rgba(255,255,255,.62),rgba(255,255,255,0) 58%);
+  opacity:var(--hl,0);
+  transition:opacity .55s;
+  pointer-events:none;
+}
+
+/* 底部标签 */
+.cap{
+  position:absolute;bottom:-34px;left:50%;
+  display:flex;align-items:center;
+  font-size:13px;font-weight:700;letter-spacing:.045em;
+  color:#4A5364;
+  white-space:nowrap;
+  transform:translateX(-50%);
+  z-index:2;
+}
+.dot{
+  display:inline-block;width:7px;height:7px;border-radius:50%;
+  margin-right:7px;flex:0 0 auto;
+}
+.dot-mini{background:#0000FF;}
+.dot-rgb{
+  background:conic-gradient(#FF0000,#FFFF00,#00FF00,#00FFFF,#0000FF,#FF00FF,#FF0000);
+}
+
+/* ---------- 放大镜 ---------- */
+.links{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:visible;}
+.links line{stroke:#9FA9BC;stroke-width:1.2;stroke-dasharray:3.5 3.5;opacity:.9;}
+
+.lens{
+  position:absolute;
+  width:var(--lens);height:var(--lens);
+  border-radius:50%;
+  background:rgba(255,255,255,.84);
+  -webkit-backdrop-filter:blur(7px) saturate(1.05);
+  backdrop-filter:blur(7px) saturate(1.05);
+  border:2.5px solid #fff;
+  box-shadow:
+    0 14px 34px -10px rgba(24,40,78,.4),
+    0 0 0 1px rgba(24,40,78,.09),
+    inset 0 0 22px rgba(210,222,245,.55);
+  display:flex;align-items:center;justify-content:center;
+  z-index:4;
+  opacity:0;
+  transform:translateY(-12px) scale(.72);
+  transition:opacity .28s ease,transform .42s cubic-bezier(.34,1.28,.58,1);
+  pointer-events:none;
+}
+.lens.on{opacity:1;transform:translateY(0) scale(1);}
+.lens-a{left:4%;top:4%;}
+.lens-b{right:4%;top:4%;}
+
+.bigbead{
+  width:60%;height:60%;
+  border-radius:26%;
+  background:linear-gradient(158deg,#FFFFFF 0%,#DCE1EB 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.95),
+    inset 0 -4px 9px rgba(30,52,96,.12),
+    0 4px 12px rgba(24,40,78,.16);
+  display:flex;align-items:center;justify-content:center;
+  gap:7%;
+  padding:0 6%;
+}
+.chip{
+  display:block;width:18%;height:52%;
+  border-radius:2px;
+  background:#C9CFDA;
+  transition:background .3s,box-shadow .3s;
+}
+.bigbead.mono .chip{
+  width:22%;height:58%;
+  background:#0000FF;
+}
+.stage.off .bigbead .chip{background:#BEC5D2 !important;}
+
+/* ---------- 控制区 ---------- */
+.ctl{
+  flex:0 0 auto;
+  width:clamp(206px,31vw,272px);
+  display:flex;flex-direction:column;
+  justify-content:center;
+  gap:9px;
+}
+
+.ctl-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  column-gap:6px;
+  row-gap:7px;
+  align-items:start;
+  width:100%;
+}
+
+.gt{
+  grid-column:1 / -1;
+  font-size:9px;font-weight:700;letter-spacing:.16em;
+  color:var(--ink3);text-transform:uppercase;
+  text-align:left;padding-left:2px;
+}
+.gt:not(:first-child){margin-top:3px;}
+
+.cell{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  background:none;border:0;padding:0;
+  font-family:inherit;cursor:pointer;
+  min-width:0;
+}
+
+.mdots{
+  width:100%;max-width:48px;aspect-ratio:1;
+  border-radius:50%;
+  background:#fff;
+  border:1.5px solid var(--line);
+  box-shadow:0 1px 3px rgba(24,40,78,.07);
+  display:flex;align-items:center;justify-content:center;
+  gap:3px;
+  transition:background .22s,border-color .22s,box-shadow .22s,transform .16s;
+}
+.cell:active .mdots{transform:scale(.94);}
+.mbtn.on .mdots{
+  background:linear-gradient(160deg,#1B4E92,var(--brand));
+  border-color:var(--brand-d);
+  box-shadow:0 8px 18px -8px rgba(18,63,120,.85),inset 0 1px 0 rgba(255,255,255,.18);
+}
+.mdots i{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--d);
+  box-shadow:inset 0 0 0 1px rgba(20,35,70,.26),0 1px 1px rgba(20,35,70,.12);
+}
+.mbtn.on .mdots i{box-shadow:0 0 6px rgba(255,255,255,.55);}
+
+.clbl{
+  font-size:11px;font-weight:600;color:var(--ink2);
+  letter-spacing:.02em;line-height:1.2;white-space:nowrap;
+  transition:color .22s;
+}
+.mbtn.on .clbl{color:var(--brand);}
+
+.ibtn{
+  width:48px;height:48px;border-radius:50%;
+  background:#fff;border:1.5px solid var(--line);
+  color:var(--ink2);
+  display:grid;place-items:center;
+  padding:0;cursor:pointer;font-family:inherit;
+  box-shadow:0 1px 3px rgba(24,40,78,.07);
+  transition:background .22s,color .22s,border-color .22s,box-shadow .22s,transform .16s;
+}
+.ibtn svg{width:22px;height:22px;display:block;}
+.ibtn:active{transform:scale(.94);}
+.ibtn.on{
+  background:linear-gradient(160deg,#1B4E92,var(--brand));
+  border-color:var(--brand-d);
+  color:#fff;
+  box-shadow:0 8px 18px -8px rgba(18,63,120,.85),inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+.bars{
+  grid-column:2 / -1;
+  align-self:center;justify-self:start;
+  display:flex;align-items:flex-end;gap:5px;
+  height:42px;
+}
+.bars i{
+  width:8px;border-radius:4px;
+  background:#DCE1EA;
+  transition:background .28s;
+}
+.bars i:nth-child(1){height:9px;}
+.bars i:nth-child(2){height:16px;}
+.bars i:nth-child(3){height:23px;}
+.bars i:nth-child(4){height:31px;}
+.bars i:nth-child(5){height:40px;}
+.bars i.on{background:linear-gradient(180deg,#3C74C4,var(--brand));}
+.bars i.hi.on{background:linear-gradient(180deg,#5E92DC,#1B4E92);}
+
+
+/* ---------- 小屏 ---------- */
+@media (max-width:700px){
+  .ctl{width:clamp(184px,30vw,224px);}
+  .mdots{max-width:44px;}
+  .ibtn{width:42px;height:42px;}
+  .ibtn svg{width:19px;height:19px;}
+  .clbl{font-size:10px;}
+  .stage{padding:9px 6px 40px;border-radius:17px;}
+  .cap{font-size:11.5px;bottom:-30px;}
+  .dot{width:6px;height:6px;margin-right:6px;}
+  .bars{height:36px;}
+  .bars i{width:7px;}
+  .bars i:nth-child(1){height:8px;}
+  .bars i:nth-child(2){height:14px;}
+  .bars i:nth-child(3){height:20px;}
+  .bars i:nth-child(4){height:27px;}
+  .bars i:nth-child(5){height:34px;}
+}
+/* 微信内置浏览器横屏时高度会被顶栏吃掉一截 */
+@media (max-height:372px){
+  .app{padding-top:6px;padding-bottom:6px;}
+  .stage{padding:8px 8px 36px;border-radius:16px;}
+  .cap{bottom:-28px;font-size:12px;}
+  .ctl{gap:7px;}
+  .ctl-grid{row-gap:5px;column-gap:5px;}
+  .gt{font-size:8.5px;}
+  .mdots{max-width:44px;}
+  .ibtn{width:44px;height:44px;}
+  .ibtn svg{width:20px;height:20px;}
+  .clbl{font-size:10px;}
+  .bars{height:34px;}
+  .bars i{width:7px;}
+  .bars i:nth-child(1){height:8px;}
+  .bars i:nth-child(2){height:13px;}
+  .bars i:nth-child(3){height:19px;}
+  .bars i:nth-child(4){height:25px;}
+  .bars i:nth-child(5){height:32px;}
+}
+@media (max-height:344px){
+  .ctl{gap:6px;}
+}
+@media (max-height:332px){
+  .ctl{gap:5px;}
+  .ctl-grid{row-gap:4px;}
+}
+
+/* ---------- 竖屏：上下堆叠 ---------- */
+@media (orientation:portrait){
+  .body{flex-direction:column;gap:12px;}
+  .stage{flex:1 1 auto;min-height:0;padding:10px 8px 48px;border-radius:20px;}
+  .cap{font-size:17px;bottom:-36px;letter-spacing:.05em;}
+  .dot{width:9px;height:9px;margin-right:9px;}
+  .ctl{width:auto;flex:0 0 auto;gap:10px;}
+  .ctl-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    column-gap:12px;row-gap:12px;
+    width:100%;max-width:420px;margin:0 auto;
+  }
+  .gt{font-size:11px;}
+  .clbl{font-size:13px;}
+  .mdots{max-width:60px;}
+  .mdots i{width:7px;height:7px;}
+  .ibtn{width:60px;height:60px;}
+  .ibtn svg{width:26px;height:26px;}
+  .bars{height:52px;gap:6px;}
+  .bars i{width:10px;}
+  .bars i:nth-child(1){height:11px;}
+  .bars i:nth-child(2){height:20px;}
+  .bars i:nth-child(3){height:29px;}
+  .bars i:nth-child(4){height:39px;}
+  .bars i:nth-child(5){height:50px;}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="body">
+    <div class="stage" id="stage">
+      <div class="side">
+        <div class="grid" id="gridMini"></div>
+        <div class="cap cap-a"><i class="dot dot-mini"></i>Mini LED</div>
+      </div>
+      <div class="side">
+        <div class="grid" id="gridRgb"></div>
+        <div class="cap cap-b"><i class="dot dot-rgb"></i>RGB LED</div>
+      </div>
+
+      <svg class="links" id="links"></svg>
+
+      <div class="lens lens-a" id="lensMini">
+        <div class="bigbead mono"><i class="chip"></i></div>
+      </div>
+      <div class="lens lens-b" id="lensRgb">
+        <div class="bigbead tri"><i class="chip"></i><i class="chip"></i><i class="chip"></i></div>
+      </div>
+    </div>
+
+    <aside class="ctl">
+      <div class="ctl-grid">
+        <div class="gt">色彩模式</div>
+
+        <button class="cell mbtn on" data-mode="1">
+          <span class="mdots"><i style="--d:#FF0000"></i><i style="--d:#FFFF00"></i><i style="--d:#00FFFF"></i></span>
+          <span class="clbl">模式一</span>
+        </button>
+        <button class="cell mbtn" data-mode="2">
+          <span class="mdots"><i style="--d:#FF0000"></i><i style="--d:#00FF00"></i><i style="--d:#0000FF"></i></span>
+          <span class="clbl">模式二</span>
+        </button>
+        <button class="cell mbtn" data-mode="3">
+          <span class="mdots"><i style="--d:#FF0000"></i><i style="--d:#00FF00"></i><i style="--d:#0000FF"></i></span>
+          <span class="clbl">模式三</span>
+        </button>
+
+        <div class="gt">亮度调节</div>
+        <div class="cell">
+          <button class="ibtn" id="btnLevel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9.2 18.2h5.6"/>
+              <path d="M10.2 21h3.6"/>
+              <path d="M12 2.8a6.2 6.2 0 0 0-3.6 11.3c.5.4.8 1 .8 1.6v.5h5.6v-.5c0-.6.3-1.2.8-1.6A6.2 6.2 0 0 0 12 2.8Z"/>
+            </svg>
+          </button>
+          <span class="clbl" id="lvlTxt">3 档</span>
+        </div>
+        <div class="bars" id="bars"><i></i><i></i><i></i><i></i><i></i></div>
+
+        <div class="gt">显示</div>
+        <div class="cell">
+          <button class="ibtn on" id="btnPower">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3.2v8.2"/>
+              <path d="M18.4 6.6a9 9 0 1 1-12.8 0"/>
+            </svg>
+          </button>
+          <span class="clbl">开关灯</span>
+        </div>
+        <div class="cell">
+          <button class="ibtn" id="btnMag">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="10.6" cy="10.6" r="6.6"/>
+              <path d="m15.5 15.5 4.6 4.6"/>
+            </svg>
+          </button>
+          <span class="clbl">放大镜</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+
+<script>
+(function(){
+  'use strict';
+
+  /* ============ 常量 ============ */
+  var SEQ   = ['#FF0000', '#00FF00', '#0000FF', '#FFFFFF', '#FFFF00', '#FF00FF', '#00FFFF'];
+  var CHIPS = ['#FF0000', '#00FF00', '#0000FF', '#2B3140'];
+  var MINI  = '#0000FF';
+  var LEVELS = [0.30, 0.48, 0.66, 0.84, 1.00];
+  var BASE  = [211, 216, 225];
+  var COLS = 3;
+  var GAP_R = 0.78;            /* 灯珠间距 = 灯珠直径 × 0.78 */
+  var MIN_ROWS = 4, MAX_ROWS = 10;
+  var ROWS = 4;
+  var MINI_MAX_LEVEL = 3;
+
+  /* ============ 状态 ============ */
+  var state = {
+    on: true,
+    mode: 1,
+    level: 3,
+    mag: false,
+    rnd: [],
+    colRnd: [0, 1, 2]
+  };
+
+  /* ============ DOM ============ */
+  var stage    = document.getElementById('stage');
+  var gridMini = document.getElementById('gridMini');
+  var gridRgb  = document.getElementById('gridRgb');
+  var links    = document.getElementById('links');
+  var lensMini = document.getElementById('lensMini');
+  var lensRgb  = document.getElementById('lensRgb');
+  var barsEl   = document.getElementById('bars');
+  var lvlTxt   = document.getElementById('lvlTxt');
+  var btnPower = document.getElementById('btnPower');
+  var btnMag   = document.getElementById('btnMag');
+  var btnLevel = document.getElementById('btnLevel');
+
+  var miniBeads = [], rgbBeads = [];
+  var N = COLS * ROWS;
+
+  /* ============ 构建（行数随屏幕高度变化） ============ */
+  function buildGrid(rows){
+    ROWS = rows;
+    N = COLS * ROWS;
+    gridMini.innerHTML = '';
+    gridRgb.innerHTML = '';
+    miniBeads = [];
+    rgbBeads = [];
+
+    for (var i = 0; i < N; i++) {
+      var b = document.createElement('span');
+      b.className = 'bead';
+      gridMini.appendChild(b);
+      miniBeads.push(b);
+
+      var r = document.createElement('span');
+      r.className = 'bead';
+      gridRgb.appendChild(r);
+      rgbBeads.push(r);
+    }
+    shuffleBeads();
+  }
+
+  /* ============ 颜色工具 ============ */
+  function hex2rgb(h){
+    h = h.replace('#', '');
+    if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+  }
+  function mixTo(hex, k){
+    var a = hex2rgb(hex);
+    return 'rgb(' +
+      Math.round(BASE[0] + (a[0]-BASE[0]) * k) + ',' +
+      Math.round(BASE[1] + (a[1]-BASE[1]) * k) + ',' +
+      Math.round(BASE[2] + (a[2]-BASE[2]) * k) + ')';
+  }
+
+  /* ============ 随机 ============ */
+  function shuffleList(len){
+    var idx = [], i, j, t;
+    for (i = 0; i < len; i++) idx.push(i);
+    for (i = len - 1; i > 0; i--) {
+      j = Math.floor(Math.random() * (i + 1));
+      t = idx[i]; idx[i] = idx[j]; idx[j] = t;
+    }
+    return idx;
+  }
+
+  function shuffleBeads(){
+    var order = shuffleList(SEQ.length);
+    state.rnd = [];
+    for (var i = 0; i < N; i++) {
+      state.rnd.push(order[i % SEQ.length]);
+    }
+  }
+
+  function rollCols(){
+    var order = shuffleList(SEQ.length);
+    var next = [order[0], order[1], order[2]];
+    if (next[0] === state.colRnd[0] && next[1] === state.colRnd[1] && next[2] === state.colRnd[2]) {
+      next = [order[3], order[4], order[5]];
+    }
+    state.colRnd = next;
+  }
+
+  /* ============ 取色 ============ */
+  function rgbColorAt(i){
+    var col = i % COLS;
+    if (state.mode === 1) return SEQ[state.rnd[i] % SEQ.length];
+    if (state.mode === 2) return SEQ[col];
+    return SEQ[state.colRnd[col] % SEQ.length];
+  }
+
+  /* ============ 渲染 ============ */
+  function render(){
+    var lvM = state.on ? LEVELS[Math.min(state.level, MINI_MAX_LEVEL) - 1] : 0;
+    var lvR = state.on ? LEVELS[state.level - 1] : 0;
+    var i;
+
+    for (i = 0; i < N; i++) {
+      miniBeads[i].style.background = mixTo(MINI, lvM);
+      miniBeads[i].style.boxShadow = lvM > 0.05
+        ? 'inset 0 0 0 1px rgba(255,255,255,.42), 0 2px 6px rgba(24,40,78,.18)'
+        : 'inset 0 0 0 1px rgba(255,255,255,.62), 0 2px 5px rgba(24,40,78,.16)';
+      miniBeads[i].style.setProperty('--hl', (0.55 * lvM).toFixed(3));
+    }
+
+    for (i = 0; i < N; i++) {
+      var hex = rgbColorAt(i);
+      var isWhite = hex.toUpperCase() === '#FFFFFF';
+
+      if (isWhite && lvR > 0.05) {
+        var w = 0.42 + 0.58 * lvR;
+        rgbBeads[i].style.background = 'rgb(' + Math.round(198 + 57 * w) + ','
+          + Math.round(204 + 51 * w) + ',255)';
+        rgbBeads[i].style.boxShadow =
+          'inset 0 0 0 1.5px rgba(150,175,215,.55), 0 2px 7px rgba(24,40,78,.18)';
+      } else {
+        rgbBeads[i].style.background = mixTo(hex, lvR);
+        rgbBeads[i].style.boxShadow =
+          'inset 0 0 0 1px rgba(255,255,255,.42), 0 2px 6px rgba(24,40,78,.18)';
+      }
+      rgbBeads[i].style.setProperty('--hl', (0.55 * lvR).toFixed(3));
+    }
+  }
+
+  /* ============ 亮度条 ============ */
+  function paintLevel(){
+    var dots = barsEl.children;
+    for (var i = 0; i < dots.length; i++) {
+      dots[i].classList.toggle('on', i < state.level && state.on);
+      dots[i].classList.toggle('hi', i >= MINI_MAX_LEVEL);
+    }
+    lvlTxt.textContent = state.on ? (state.level + ' 档') : '已关';
+  }
+
+  /* ============ 模式切换 ============ */
+  function syncModeBtns(){
+    var btns = document.querySelectorAll('.mbtn');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle('on', Number(btns[i].dataset.mode) === state.mode);
+    }
+  }
+
+  function setMode(m){
+    state.mode = m;
+    if (m === 1) shuffleBeads();
+    if (m === 3) rollCols();
+    syncModeBtns();
+    render();
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('.mbtn'), function(btn){
+    btn.addEventListener('click', function(){
+      if (!state.on) {
+        state.on = true;
+        btnPower.classList.add('on');
+        stage.classList.remove('off');
+        paintLevel();
+      }
+      setMode(Number(btn.dataset.mode));
+    });
+  });
+
+  /* ============ 开关灯 ============ */
+  btnPower.addEventListener('click', function(){
+    state.on = !state.on;
+    if (state.on) {
+      state.mode = 1;
+      shuffleBeads();
+      syncModeBtns();
+    }
+    btnPower.classList.toggle('on', state.on);
+    stage.classList.toggle('off', !state.on);
+    paintLevel();
+    render();
+  });
+
+  /* ============ 亮度 ============ */
+  btnLevel.addEventListener('click', function(){
+    if (!state.on) {
+      state.on = true;
+      btnPower.classList.add('on');
+      stage.classList.remove('off');
+    }
+    state.level = state.level >= 5 ? 1 : state.level + 1;
+    paintLevel();
+    render();
+  });
+
+  /* ============ 放大镜 ============ */
+  function rollChips(){
+    var chips = lensRgb.querySelectorAll('.chip');
+    var base = [CHIPS[0], CHIPS[1], CHIPS[2]];
+    var i, j, t;
+
+    for (i = 2; i > 0; i--) {
+      j = Math.floor(Math.random() * (i + 1));
+      t = base[i]; base[i] = base[j]; base[j] = t;
+    }
+
+    var picked = base.map(function(c){
+      return Math.random() < 0.18 ? CHIPS[3] : c;
+    });
+    if (picked[0] === CHIPS[3] && picked[1] === CHIPS[3] && picked[2] === CHIPS[3]) {
+      picked[Math.floor(Math.random() * 3)] = base[0];
+    }
+
+    for (i = 0; i < chips.length; i++) {
+      var col = picked[i];
+      chips[i].style.background = col;
+      chips[i].style.boxShadow = (col === CHIPS[3]) ? 'none' : '0 1px 3px rgba(24,40,78,.25)';
+    }
+  }
+
+  function drawLinks(){
+    if (!state.mag) { links.innerHTML = ''; return; }
+    var sr = stage.getBoundingClientRect();
+    links.setAttribute('viewBox', '0 0 ' + sr.width + ' ' + sr.height);
+    links.setAttribute('width', sr.width);
+    links.setAttribute('height', sr.height);
+
+    var mid = COLS * Math.floor(ROWS / 2) + 1;   /* 画面中部那颗灯珠 */
+    var pairs = [
+      [miniBeads[mid], lensMini],
+      [rgbBeads[mid], lensRgb]
+    ];
+    var out = '';
+    for (var i = 0; i < pairs.length; i++) {
+      var a = pairs[i][0].getBoundingClientRect();
+      var b = pairs[i][1].getBoundingClientRect();
+      var ax = a.left + a.width / 2 - sr.left, ay = a.top + a.height / 2 - sr.top;
+      var bx = b.left + b.width / 2 - sr.left, by = b.top + b.height / 2 - sr.top;
+      var dx = bx - ax, dy = by - ay;
+      var len = Math.sqrt(dx * dx + dy * dy) || 1;
+      var rad = b.width / 2 + 1;
+      out += '<line x1="' + ax + '" y1="' + ay +
+             '" x2="' + (bx - dx / len * rad) + '" y2="' + (by - dy / len * rad) + '"/>';
+    }
+    links.innerHTML = out;
+  }
+
+  btnMag.addEventListener('click', function(){
+    state.mag = !state.mag;
+    btnMag.classList.toggle('on', state.mag);
+    lensMini.classList.toggle('on', state.mag);
+    lensRgb.classList.toggle('on', state.mag);
+    if (state.mag) rollChips();
+    requestAnimationFrame(drawLinks);
+  });
+
+  /* ============ 每 2 秒自动变化 ============ */
+  setInterval(function(){
+    if (!state.on) return;
+    if (state.mode === 1) { shuffleBeads(); render(); }
+    else if (state.mode === 3) { rollCols(); render(); }
+    if (state.mag) rollChips();
+  }, 2000);
+
+  /* ============ 自适应：灯珠尺寸 + 行数 ============ */
+  function fit(){
+    var r = stage.getBoundingClientRect();
+    var sideW = r.width / 2 - 12;
+    var sideH = r.height - 60;          /* 扣掉底部标签 */
+    if (sideW < 40 || sideH < 40) return;
+
+    /* 宽度先定一个基准尺寸（3 列） */
+    var bw = sideW * 0.98 / (COLS + GAP_R * (COLS - 1));
+    bw = Math.min(bw, 72);
+
+    /* 按基准尺寸能排几行 */
+    var rowsFit = Math.floor((sideH * 0.99 + GAP_R * bw) / ((1 + GAP_R) * bw));
+    var rows = Math.max(MIN_ROWS, Math.min(MAX_ROWS, rowsFit));
+
+    /* 竖屏：在 8~10 行里挑最多的行数，只要灯珠不缩得比基准小太多（≥75%）就算成立 */
+    if (window.matchMedia('(orientation:portrait)').matches) {
+      for (var rr = MAX_ROWS; rr >= 8; rr--) {
+        var bt = sideH * 0.99 / (rr + GAP_R * (rr - 1));
+        if (bt >= bw * 0.75) { if (rr > rows) rows = rr; break; }
+      }
+    }
+
+    /* 再用行数反推尺寸，取两者较小值，保证不溢出 */
+    var bh = sideH * 0.99 / (rows + GAP_R * (rows - 1));
+    var b = Math.max(9, Math.min(bw, bh));
+
+    var lens = Math.max(64, Math.min(Math.min(r.width * 0.23, r.height * 0.27), 104));
+
+    stage.style.setProperty('--b', b.toFixed(2) + 'px');
+    stage.style.setProperty('--lens', lens.toFixed(1) + 'px');
+
+    if (rows !== ROWS) {
+      buildGrid(rows);
+      render();
+    }
+    lastW = r.width;
+    lastH = r.height;
+    if (state.mag) requestAnimationFrame(drawLinks);
+  }
+
+  /* 微信里旋转时常不派发 resize，补一个轻量的尺寸巡检 */
+  var lastW = 0, lastH = 0;
+  setInterval(function(){
+    var r = stage.getBoundingClientRect();
+    if (Math.abs(r.width - lastW) > 2 || Math.abs(r.height - lastH) > 2) fit();
+  }, 400);
+
+  /* ============ 启动 ============ */
+  var rt;
+  window.addEventListener('resize', function(){
+    clearTimeout(rt);
+    rt = setTimeout(fit, 90);
+  });
+  window.addEventListener('orientationchange', function(){
+    setTimeout(fit, 220);
+  });
+
+  buildGrid(4);
+  fit();
+  paintLevel();
+  render();
+})();
+</script>
+</body>
+</html>
